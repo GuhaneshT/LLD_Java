@@ -1,16 +1,21 @@
 package Library;
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class Library {
     public List<Book> allBooks = new ArrayList<>();
+    public List<BookCopy> allCopies = new ArrayList<>();
     public List<Reader> readers = new ArrayList<>();
-    public HashMap<Book,Reader> borrowedMap = new HashMap<>();
+    public List<Loan> activeLoans = new ArrayList<>();
+    public Catalog catalog;
 
     public Library(List<Book> books){
         this.allBooks = books;
+        this.catalog = new Catalog(books);
+        for (int i = 0; i < books.size(); i++) {
+            this.allCopies.add(new BookCopy("COPY-" + (i + 1), books.get(i)));
+        }
     }
 
     public void borrowBook(Book book,Reader reader,Date currDate){
@@ -18,25 +23,20 @@ public class Library {
             System.out.println("Book or reader not found");
             return;
         }
-        if (!book.ifAvailable()) {
-            System.out.println("Book is already borrowed");
+        BookCopy availableCopy = findAvailableCopy(book);
+        if (availableCopy == null) {
+            System.out.println("No available copy for the book");
             return;
         }
-        borrowedMap.put(book,reader);
-        book.borrowBook(currDate, reader);
-        reader.recordBorrow(book);
+        Loan loan = new Loan(availableCopy, reader, currDate);
+        activeLoans.add(loan);
+        availableCopy.borrowed = true;
+        reader.recordBorrow(availableCopy);
 
     }
 
     public Book findBook(String bookName){
-        //tbi
-        for(Book book : allBooks){
-            if(book.name.equals(bookName)){
-                return book;
-            }
-        }
-        return null;
-
+        return this.catalog.findBook(bookName);
     }
 
     public Reader findReader(String readerName){
@@ -54,23 +54,40 @@ public class Library {
             System.out.println("Book or reader not found");
             return 0L;
         }
-        if (book.ifAvailable()) {
-            System.out.println("Book is not currently borrowed");
-            return 0L;
-        }
-        Reader actualReader = borrowedMap.get(book);
-        if (actualReader != reader) {
+        Loan loan = findActiveLoan(book, reader);
+        if (loan == null) {
+            System.out.println("This reader does not have an active loan for the book");
             System.out.println("This reader did not borrow the book");
             return 0L;
         }
-        borrowedMap.remove(book);
-        long fineAmt = book.returnBook(currDate);
+        activeLoans.remove(loan);
+        loan.bookCopy.borrowed = false;
+        loan.returnDate = currDate;
+        long fineAmt = loan.fine.calculateFine(currDate);
         reader.due += fineAmt;
-        reader.recordReturn(book);
+        reader.recordReturn(loan.bookCopy);
         return fineAmt;
 
 
 
+    }
+
+    public BookCopy findAvailableCopy(Book book) {
+        for (BookCopy copy : allCopies) {
+            if (copy.book == book && !copy.borrowed) {
+                return copy;
+            }
+        }
+        return null;
+    }
+
+    public Loan findActiveLoan(Book book, Reader reader) {
+        for (Loan loan : activeLoans) {
+            if (loan.bookCopy.book == book && loan.reader == reader) {
+                return loan;
+            }
+        }
+        return null;
     }
     
     

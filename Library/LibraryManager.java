@@ -20,7 +20,9 @@ public class LibraryManager {
 
     public void listBooks(){
         for(Book book : this.library.allBooks){
-            System.out.println(book.name + " borrowed status -  " + book.borrowed.toString());
+            BookCopy copy = this.library.findAvailableCopy(book);
+            boolean available = copy != null;
+            System.out.println(book.name + " available status -  " + Boolean.toString(available));
         }
     }
 
