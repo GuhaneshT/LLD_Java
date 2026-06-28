@@ -1,3 +1,4 @@
+package ParkingLot;
 import java.time.LocalDateTime;
 
 public class ParkingTicket {

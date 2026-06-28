@@ -1,3 +1,4 @@
+package ParkingLot;
 public class ParkingSpot {
     private final String id;
     private final VehicleType supportedType;

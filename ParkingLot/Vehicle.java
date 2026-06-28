@@ -1,3 +1,4 @@
+package ParkingLot;
 public abstract class Vehicle {
     public enum Size {
         SMALL,
